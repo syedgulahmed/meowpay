@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: meowpay-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: meowpay
+      POSTGRES_USER: meowpay
+      POSTGRES_PASSWORD: meowpay
+    ports:
+      - "5432:5432"
+    volumes:
+      - meowpay_data:/var/lib/postgresql/data
+
+volumes:
+  meowpay_data:
