@@ -51,6 +51,11 @@ function openSendScreen(catId) {
   document.getElementById('status').textContent = '';
   document.getElementById('status').className = 'status';
 
+  document.getElementById('recipient').classList.remove('hidden');
+  document.getElementById('amount').classList.remove('hidden');
+  document.getElementById('send-btn').classList.remove('hidden');
+  document.getElementById('send-another-btn').classList.add('hidden');
+
   screenList.classList.add('hidden');
   screenSend.classList.remove('hidden');
 }
@@ -62,12 +67,18 @@ function goBack() {
 }
 
 async function handleSend() {
-  const amount = Number(document.getElementById('amount').value);
+  const amountInput = document.getElementById('amount').value;
+  const amount = Number(amountInput);
   const recipientId = document.getElementById('recipient').value;
   const statusEl = document.getElementById('status');
 
-  if (!amount || amount <= 0) {
+  if (amountInput.trim() === '') {
     statusEl.textContent = 'Enter an amount first.';
+    statusEl.className = 'status error';
+    return;
+  }
+  if (amount <= 0) {
+    statusEl.textContent = 'Amount must be greater than zero.';
     statusEl.className = 'status error';
     return;
   }
@@ -88,7 +99,7 @@ async function handleSend() {
 
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
-      statusEl.textContent = err.message || 'Send failed.';
+      statusEl.textContent = err.detail || err.title || 'Send failed.';
       statusEl.className = 'status error';
       return;
     }
@@ -101,10 +112,27 @@ async function handleSend() {
     document.getElementById('sender-balance').textContent = transfer.senderBalance;
     statusEl.textContent = `Sent ${amount} treats.`;
     statusEl.className = 'status success';
+
+    document.getElementById('recipient').classList.add('hidden');
+    document.getElementById('amount').classList.add('hidden');
+    document.getElementById('send-btn').classList.add('hidden');
+    document.getElementById('send-another-btn').classList.remove('hidden');
   } catch (e) {
     statusEl.textContent = 'Something went wrong.';
     statusEl.className = 'status error';
   }
+}
+
+function resetSendForm() {
+  currentIdempotencyKey = crypto.randomUUID();
+  document.getElementById('amount').value = '';
+  document.getElementById('status').textContent = '';
+  document.getElementById('status').className = 'status';
+
+  document.getElementById('recipient').classList.remove('hidden');
+  document.getElementById('amount').classList.remove('hidden');
+  document.getElementById('send-btn').classList.remove('hidden');
+  document.getElementById('send-another-btn').classList.add('hidden');
 }
 
 function updateCatBalance(catId, newBalance) {
@@ -114,5 +142,6 @@ function updateCatBalance(catId, newBalance) {
 
 document.getElementById('back-btn').addEventListener('click', goBack);
 document.getElementById('send-btn').addEventListener('click', handleSend);
+document.getElementById('send-another-btn').addEventListener('click', resetSendForm);
 
 loadCats();
