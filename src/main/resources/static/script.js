@@ -56,10 +56,63 @@ function openSendScreen(catId) {
 }
 
 function goBack() {
+  renderCatList();
   screenSend.classList.add('hidden');
   screenList.classList.remove('hidden');
 }
 
+async function handleSend() {
+  const amount = Number(document.getElementById('amount').value);
+  const recipientId = document.getElementById('recipient').value;
+  const statusEl = document.getElementById('status');
+
+  if (!amount || amount <= 0) {
+    statusEl.textContent = 'Enter an amount first.';
+    statusEl.className = 'status error';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/transfers`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Idempotency-Key': currentIdempotencyKey
+      },
+      body: JSON.stringify({
+        senderId: currentSenderId,
+        recipientId: recipientId,
+        amount
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      statusEl.textContent = err.message || 'Send failed.';
+      statusEl.className = 'status error';
+      return;
+    }
+
+    const transfer = await res.json();
+
+    updateCatBalance(transfer.senderId, transfer.senderBalance);
+    updateCatBalance(transfer.recipientId, transfer.recipientBalance);
+
+    document.getElementById('sender-balance').textContent = transfer.senderBalance;
+    statusEl.textContent = `Sent ${amount} treats.`;
+    statusEl.className = 'status success';
+  } catch (e) {
+    statusEl.textContent = 'Something went wrong.';
+    statusEl.className = 'status error';
+  }
+}
+
+function updateCatBalance(catId, newBalance) {
+  const cat = cats.find(c => c.id === catId);
+  if (cat) cat.treat = newBalance;
+}
+
 document.getElementById('back-btn').addEventListener('click', goBack);
+document.getElementById('send-btn').addEventListener('click', handleSend);
 
 loadCats();
