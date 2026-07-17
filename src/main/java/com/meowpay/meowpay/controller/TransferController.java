@@ -5,6 +5,7 @@ import com.meowpay.meowpay.dto.TransferResponse;
 import com.meowpay.meowpay.model.Cat;
 import com.meowpay.meowpay.model.Transfer;
 import com.meowpay.meowpay.repository.CatRepository;
+import com.meowpay.meowpay.service.TransferResult;
 import com.meowpay.meowpay.service.TransferService;
 
 import org.springframework.http.HttpStatus;
@@ -27,10 +28,11 @@ public class TransferController {
 
     @PostMapping("/transfers")
     public ResponseEntity<TransferResponse> createTransfer(
-            @RequestBody TransferRequest request, 
+            @RequestBody TransferRequest request,
             @RequestHeader("Idempotency-Key") String idempotencyKey) {
 
-        Transfer transfer = transferService.send(request.senderId, request.recipientId, request.amount, idempotencyKey);
+        TransferResult result = transferService.send(request.senderId, request.recipientId, request.amount, idempotencyKey);
+        Transfer transfer = result.getTransfer();
 
         TransferResponse response = new TransferResponse();
         response.id = transfer.getId();
@@ -44,6 +46,8 @@ public class TransferController {
         response.senderBalance = sender.getTreat();
         response.recipientBalance = recipient.getTreat();
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        HttpStatus status = result.isWasReplay() ? HttpStatus.OK : HttpStatus.CREATED;
+        return ResponseEntity.status(status).body(response);
     }
+
 }

@@ -21,7 +21,12 @@ public class TransferService {
     }
 
     @Transactional
-    public Transfer send(UUID senderId, UUID recipientId, Long amount, String idempotencyKey) {
+    public TransferResult send(UUID senderId, UUID recipientId, Long amount, String idempotencyKey) {
+
+        var existing = transferRepository.findByIdempotencyKey(idempotencyKey);
+        if (existing.isPresent()) {
+            return new TransferResult(existing.get(), true);
+        }
 
         UUID firstId = senderId.compareTo(recipientId) < 0 ? senderId : recipientId;
         UUID secondId = senderId.compareTo(recipientId) < 0 ? recipientId : senderId;
@@ -37,6 +42,7 @@ public class TransferService {
         sender.debit(amount);
         recipient.credit(amount);
 
-        return transferRepository.save(new Transfer(senderId, recipientId, amount, idempotencyKey));
+        Transfer saved = transferRepository.save(new Transfer(senderId, recipientId, amount, idempotencyKey));
+        return new TransferResult(saved, false);
     }
 }
