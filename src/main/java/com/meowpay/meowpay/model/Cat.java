@@ -11,6 +11,8 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
+import com.meowpay.meowpay.exception.InsufficientFundsException;
+
 @Entity
 @Table(name = "cat")
 public class Cat {
@@ -57,7 +59,7 @@ public class Cat {
             throw new IllegalArgumentException("Debit amount must be positive");
         }
         if (this.treat - amount < 0) {
-            throw new IllegalStateException("Insufficient treats");
+            throw new InsufficientFundsException("Insufficient treats: has " + this.treat + ", needs " + amount);
         }
         this.treat -= amount;
     }

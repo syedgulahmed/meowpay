@@ -1,5 +1,7 @@
 package com.meowpay.meowpay.service;
 
+import com.meowpay.meowpay.exception.CatNotFoundException;
+import com.meowpay.meowpay.exception.SelfTransferException;
 import com.meowpay.meowpay.model.Cat;
 import com.meowpay.meowpay.model.Transfer;
 import com.meowpay.meowpay.repository.CatRepository;
@@ -28,13 +30,17 @@ public class TransferService {
             return new TransferResult(existing.get(), true);
         }
 
+        if (senderId.equals(recipientId)) {
+            throw new SelfTransferException();
+        } 
+
         UUID firstId = senderId.compareTo(recipientId) < 0 ? senderId : recipientId;
         UUID secondId = senderId.compareTo(recipientId) < 0 ? recipientId : senderId;
 
         Cat first = catRepository.findByIdForUpdate(firstId)
-            .orElseThrow(() -> new RuntimeException("Cat not found: " + firstId));
+            .orElseThrow(() -> new CatNotFoundException(firstId));
         Cat second = catRepository.findByIdForUpdate(secondId)
-            .orElseThrow(() -> new RuntimeException("Cat not found: " + secondId));
+            .orElseThrow(() -> new CatNotFoundException(secondId));
 
         Cat sender = first.getId().equals(senderId) ? first : second;
         Cat recipient = sender == first ? second : first;
