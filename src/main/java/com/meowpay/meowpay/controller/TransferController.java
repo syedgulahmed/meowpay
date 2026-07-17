@@ -11,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -25,8 +26,11 @@ public class TransferController {
     }
 
     @PostMapping("/transfers")
-    public ResponseEntity<TransferResponse> createTransfer(@RequestBody TransferRequest request) {
-        Transfer transfer = transferService.send(request.senderId, request.recipientId, request.amount);
+    public ResponseEntity<TransferResponse> createTransfer(
+            @RequestBody TransferRequest request, 
+            @RequestHeader("Idempotency-Key") String idempotencyKey) {
+
+        Transfer transfer = transferService.send(request.senderId, request.recipientId, request.amount, idempotencyKey);
 
         TransferResponse response = new TransferResponse();
         response.id = transfer.getId();

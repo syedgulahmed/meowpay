@@ -21,7 +21,7 @@ public class TransferService {
     }
 
     @Transactional
-    public Transfer send(UUID senderId, UUID recipientId, Long amount) {
+    public Transfer send(UUID senderId, UUID recipientId, Long amount, String idempotencyKey) {
 
         UUID firstId = senderId.compareTo(recipientId) < 0 ? senderId : recipientId;
         UUID secondId = senderId.compareTo(recipientId) < 0 ? recipientId : senderId;
@@ -37,6 +37,6 @@ public class TransferService {
         sender.debit(amount);
         recipient.credit(amount);
 
-        return transferRepository.save(new Transfer(senderId, recipientId, amount, UUID.randomUUID().toString()));
+        return transferRepository.save(new Transfer(senderId, recipientId, amount, idempotencyKey));
     }
 }
